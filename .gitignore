@@ -1,0 +1,16 @@
+data/
+checkpoint/
+atype_checkpoint/
+*.xlsx
+*.swp
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+*.txt
+*.json
+

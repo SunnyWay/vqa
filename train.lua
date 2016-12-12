@@ -17,7 +17,7 @@ cmd:text('Options')
 cmd:option('-input_json', 'data/data.json', 'json data for training')
 cmd:option('-input_h5', 'data/data.h5', 'h5 data for training')
 
-cmd:option('-noeval', false, 'evaluate locally (used for split 2 and 3)')
+cmd:option('-noeval', false, 'do not evaluate locally (used for split 2 and 3)')
 
 cmd:option('-emb_size', 200, 'word embedding size')
 cmd:option('-lstm_hs', 512, 'hidden size of lstm')

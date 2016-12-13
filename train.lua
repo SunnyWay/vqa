@@ -33,6 +33,7 @@ cmd:option('-save_cp_every', 2000, 'frequency for saving model')
 cmd:option('-cp_path', 'checkpoint', 'path to save checkpoints')
 
 cmd:option('-test_every', 2000, 'frequency for testing')
+cmd:option('-test_task', 'oe', 'which task test on, oe | mc | both')
 
 cmd:option('-gpuid', 0, 'gpu no. to use')
 cmd:option('-seed', 1234, 'random number generator seed to use')
@@ -261,22 +262,26 @@ function test()
         local sid, fv_txt, fv_img, label, mc = testset:next_batch()
         local score = model:forward({fv_txt, fv_img})
 
-        local _, oe_ans_idx = score:max(2)
-        for j=1,sid:size(1) do
-            oe_result[i+j-1] = {question_id=sid[j], answer=itoa[oe_ans_idx[j][1]]}
+        if opt.test_task == 'oe' or opt.test_task == 'both' then
+            local _, oe_ans_idx = score:max(2)
+            for j=1,sid:size(1) do
+                oe_result[i+j-1] = {question_id=sid[j], answer=itoa[oe_ans_idx[j][1]]}
+            end
         end
 
-        for j=1,mc:size(1) do
-            local mc_score = {}
-            local mc_score_pos = {}
-            for k=1,mc:size(2) do
-                if mc[j][k] ~= 0 then
-                    table.insert(mc_score_pos, mc[j][k])
-                    table.insert(mc_score, score[j][mc[j][k]])
+        if opt.test_task == 'mc' or opt.test_task == 'both' then
+            for j=1,mc:size(1) do
+                local mc_score = {}
+                local mc_score_pos = {}
+                for k=1,mc:size(2) do
+                    if mc[j][k] ~= 0 then
+                        table.insert(mc_score_pos, mc[j][k])
+                        table.insert(mc_score, score[j][mc[j][k]])
+                    end
                 end
+                local _, idx = torch.Tensor(mc_score):max(1)
+                mc_result[i+j-1] = {question_id=sid[j], answer=itoa[mc_score_pos[idx[1]]]}
             end
-            local _, idx = torch.Tensor(mc_score):max(1)
-            mc_result[i+j-1] = {question_id=sid[j], answer=itoa[mc_score_pos[idx[1]]]}
         end
     end
 
@@ -311,20 +316,24 @@ for iter=1,max_iter do
 
     if test_every > 0 and iter%test_every == 0 then
         local oe_txt, mc_txt = test()
-        local fname = string.format('%s/oe_iter_%d_result.json', opt.rundir, iter)
-        local fp = io.open(fname, 'w')
-        fp:write(oe_txt)
-        fp:close()
-        if not opt.noeval then
-            os.execute('python evaluate.py --res_file '..fname..' --task OpenEnded'..' > /dev/null')
+        if opt.test_task == 'oe' or opt.test_task == 'both' then
+            local fname = string.format('%s/oe_iter_%d_result.json', opt.rundir, iter)
+            local fp = io.open(fname, 'w')
+            fp:write(oe_txt)
+            fp:close()
+            if not opt.noeval then
+                os.execute('python evaluate.py --res_file '..fname..' --task OpenEnded'..' > /dev/null')
+            end
         end
 
-        fname = string.format('%s/mc_iter_%d_result.json', opt.rundir, iter)
-        fp = io.open(fname, 'w')
-        fp:write(mc_txt)
-        fp:close()
-        if not opt.noeval then
-            os.execute('python evaluate.py --res_file '..fname..' --task MultipleChoice'..' > /dev/null')
+        if opt.test_task == 'mc' or opt.test_task == 'both' then
+            fname = string.format('%s/mc_iter_%d_result.json', opt.rundir, iter)
+            fp = io.open(fname, 'w')
+            fp:write(mc_txt)
+            fp:close()
+            if not opt.noeval then
+                os.execute('python evaluate.py --res_file '..fname..' --task MultipleChoice'..' > /dev/null')
+            end
         end
     end
 

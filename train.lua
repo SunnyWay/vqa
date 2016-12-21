@@ -107,6 +107,8 @@ seq_len = trainset['txt']:size(2)
 img_fea_size = trainset['img_fea']:size(2)
 
 do
+    local start_line = debug.getinfo(1).currentline
+
     local txt_encoder = nn.Sequential()
         :add(nn.LookupTableMaskZero(nword, opt.emb_size))
         :add(nn.Dropout(0.5))
@@ -136,6 +138,17 @@ do
     model = nn.gModule({txt, img}, {ans})
     
     criterion = nn.CrossEntropyCriterion()
+
+    local end_line = debug.getinfo(1).currentline
+
+    local lineno = 1
+    local curfile = string.sub(debug.getinfo(1, 'S').source, 2)
+    for line in io.lines(curfile) do
+        if lineno > start_line and lineno < end_line then
+            print(line)
+        end
+        lineno = lineno + 1
+    end
 end
 
 

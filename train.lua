@@ -47,6 +47,7 @@ paths.mkdir(opt.rundir)
 cmd:log(opt.rundir..'/log', opt)
 cmd:addTime('vqa', '%T')
 
+torch.manualSeed(opt.seed)
 if opt.gpuid >= 0 then
     require 'cutorch'
     require 'cunn'
